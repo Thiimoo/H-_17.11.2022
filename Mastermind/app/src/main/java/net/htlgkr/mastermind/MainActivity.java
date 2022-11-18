@@ -11,6 +11,8 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Array;
@@ -20,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Scanner;
+import java.util.logging.Logger;
 
 public class MainActivity extends AppCompatActivity {
     Map<String, String> settings = new HashMap<>();
@@ -92,11 +95,37 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void settingsbutton(View view){
+        if (!list.isEmpty()) {
+            System.out.println(list.get(0));
+        }
+
+        if(list.contains("correctPositionSign +")||list.contains("correctCodeElementSign −")||list.contains("codeLength 4")||list.contains("doubleallowed true"))
+        {
+            list.clear();
+            adapter.notifyDataSetChanged();
+            return;
+        }
         list.clear();
         for(Map.Entry<String, String> m : settings.entrySet()){
             list.add(m.getKey() + " " + m.getValue());
         }
         adapter.notifyDataSetChanged();
+    }
+
+    public void highScoresButton(View view)
+    {
+
+        list.add("High-Scores: ");
+        adapter.notifyDataSetChanged();
+        String path = getFilesDir().getAbsolutePath()+"/data/data/Mastermind";
+        System.out.println(path);
+        File f = new File(path);
+        try {
+            Scanner s = new Scanner(f);
+        } catch (FileNotFoundException e) {
+            System.out.println("File not found");
+            f.getAbsolutePath();
+        }
     }
 
     public void submitbutton(View view){
