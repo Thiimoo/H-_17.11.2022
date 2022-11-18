@@ -130,6 +130,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void submitbutton(View view){
         Button submit = findViewById(R.id.submit);
+
         if(userguess == Integer.parseInt(settings.get("guessRounds"))){
             list.add("Verloren: " + pattern);
             submit.setVisibility(View.GONE);
@@ -138,6 +139,7 @@ public class MainActivity extends AppCompatActivity {
         userguess++;
         System.out.println(pattern);
         EditText guess = findViewById(R.id.guess);
+
         if(guess.getText().toString().length() != 4){
             Toast.makeText(this, "Enter 4 digits", Toast.LENGTH_SHORT).show();
             return;
@@ -150,6 +152,7 @@ public class MainActivity extends AppCompatActivity {
         }
         list.add(checkPattern(guess.getText().toString().toUpperCase()));
         adapter.notifyDataSetChanged();
+        guess.setText("");
     }
 
     private InputStream getInputStreamForAsset(String filename) {
