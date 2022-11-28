@@ -67,7 +67,11 @@ public class MainActivity extends AppCompatActivity {
 
     public void submitbutton(View view)
     {
-        g.submitbutton(view);
+        String temp = g.submitbutton(view);
+        if (temp.equals("toast"))
+        {
+            Toast.makeText(this, "Enter valid guess", Toast.LENGTH_SHORT).show();
+        }
     }
 
 

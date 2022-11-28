@@ -88,22 +88,21 @@ public class Game {
         return userInput + " | " + dd;
     }
 
-    public void submitbutton(View view){
+    public String submitbutton(View view){
         Button submit = view.findViewById(R.id.submit);
 
         if(userguess == Integer.parseInt(settings.get("guessRounds"))){
             list.clear();
             list.add("Verloren: " + pattern);
             submit.setVisibility(View.GONE);
-            return;
+            return "verloren";
         }
         userguess++;
         System.out.println(pattern);
         EditText guess = view.findViewById(R.id.guess);
         this.currentguess = guess.getText().toString();
         if(guess.getText().toString().length() != 4 || isStringinside(guess.getText().toString())){
-            //Toast.makeText(this, "Enter valid guess", Toast.LENGTH_SHORT).show();
-            return;
+            return "toast";
         }
         String l = checkPattern(guess.getText().toString().toUpperCase());
         if(l.equals("w")){
@@ -112,11 +111,12 @@ public class Game {
             b.setEnabled(false);
             list.add("won! Pattern: " + pattern+" in "+userguess+" guesses");
             adapter.notifyDataSetChanged();
-            return;
+            return "win";
         }
         list.add(checkPattern(guess.getText().toString().toUpperCase()));
         adapter.notifyDataSetChanged();
         guess.setText("");
+        return "casual";
     }
 
     private void savetotemp()
