@@ -127,6 +127,38 @@ public class Game {
         }
     }
 
+    public void writeHighScore() throws IOException, SAXException {
+        File f = new File("data/data/net.htlgkr.mastermind/files/highscores.xml");
+        DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder docBuilder = null;
+        try {
+            docBuilder = docFactory.newDocumentBuilder();
+        } catch (ParserConfigurationException e) {
+            e.printStackTrace();
+        }
+        //TODO: schau ob des file 0 is sonst des sonst docBuilder.newDocument;
+        Document doc = docBuilder.parse(f);
+        Element rootElement = doc.createElement("highScore");
+        rootElement.setTextContent(String.valueOf(userguess));
+        doc.appendChild(rootElement);
+        FileOutputStream output = null;
+        try {
+            output = new FileOutputStream(f,true);
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            Transformer transformer = transformerFactory.newTransformer();
+            DOMSource source = new DOMSource(doc);
+            StreamResult result = new StreamResult(output);
+            transformer.transform(source, result);
+            System.out.println("write data success to file"+ f.getAbsolutePath());
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (TransformerConfigurationException e) {
+            e.printStackTrace();
+        } catch (TransformerException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void settingsbutton(View view){
 
         //TODO: es is des pattern in da listn nd nua da guess
@@ -203,6 +235,13 @@ public class Game {
             b.setEnabled(false);
             m.list.add("won! Pattern: " + pattern+" in "+userguess+" guesses");
             adapter.notifyDataSetChanged();
+            try {
+                writeHighScore();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (SAXException e) {
+                e.printStackTrace();
+            }
             return "win";
         }
         m.list.add(l);
