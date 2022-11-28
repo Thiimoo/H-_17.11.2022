@@ -25,12 +25,15 @@ import java.util.Scanner;
 import java.util.logging.Logger;
 
 public class MainActivity extends AppCompatActivity {
+
+    Game g;
     Map<String, String> settings = new HashMap<>();
+
     ListView listView;
     ArrayAdapter<String> adapter;
     List<String> list = new ArrayList<>();
-    String pattern = "";
-    int userguess = 0;
+    String pattern;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -41,6 +44,7 @@ public class MainActivity extends AppCompatActivity {
         loadSettings();
         generatePattern();
         System.out.println(pattern);
+        g = new Game(pattern, adapter,settings,this);
     }
 
 
@@ -50,7 +54,6 @@ public class MainActivity extends AppCompatActivity {
             String line = sc.nextLine().replace(" ", "");
             String[] parts = line.split("=");
             settings.put(parts[0], parts[1]);
-
         }
     }
 
@@ -62,100 +65,24 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public String checkPattern(String userInput) {
-        String dd = "";
-        if (pattern.equals(userInput)) {
-            return "w";
-        } else {
-
-            StringBuilder patternBuilder = new StringBuilder(pattern);
-            StringBuilder userPatternBuilder = new StringBuilder(userInput);
-
-            for (int i = 0; i < patternBuilder.length(); i++) {
-                if (patternBuilder.charAt(i) == userPatternBuilder.charAt(i)) {
-                    dd += settings.get("correctPositionSign");
-                    patternBuilder.deleteCharAt(i);
-                    userPatternBuilder.deleteCharAt(i);
-                    i--;
-                }
-            }
-            for (int i = 0; i < patternBuilder.length(); i++) {
-                for (int j = 0; j < userPatternBuilder.length(); j++) {
-                    if (patternBuilder.charAt(i) == userPatternBuilder.charAt(j)) {
-                        dd += settings.get("correctCodeElementSign");
-                        patternBuilder.deleteCharAt(i);
-                        userPatternBuilder.deleteCharAt(j);
-                        i--;
-                        break;
-                    }
-                }
-            }
-        }
-        return userInput + " | " + dd;
+    public void submitbutton(View view)
+    {
+        g.submitbutton(view);
     }
 
-    public void settingsbutton(View view){
-        if (!list.isEmpty()) {
-            System.out.println(list.get(0));
-        }
 
-        if(list.contains("correctPositionSign +")||list.contains("correctCodeElementSign −")||list.contains("codeLength 4")||list.contains("doubleallowed true"))
-        {
-            list.clear();
-            adapter.notifyDataSetChanged();
-            return;
-        }
-        list.clear();
-        for(Map.Entry<String, String> m : settings.entrySet()){
-            list.add(m.getKey() + " " + m.getValue());
-        }
-        adapter.notifyDataSetChanged();
+    public void settingsbutton(View view)
+    {
+        g.settingsbutton(view);
     }
 
     public void highScoresButton(View view)
     {
-
-        list.add("High-Scores: ");
-        adapter.notifyDataSetChanged();
-        String path = getFilesDir().getAbsolutePath()+"/data/data/Mastermind";
-        System.out.println(path);
-        File f = new File(path);
-        try {
-            Scanner s = new Scanner(f);
-        } catch (FileNotFoundException e) {
-            System.out.println("File not found");
-            f.getAbsolutePath();
-        }
+        g.highScoresButton(view);
     }
 
-    public void submitbutton(View view){
-        Button submit = findViewById(R.id.submit);
-
-        if(userguess == Integer.parseInt(settings.get("guessRounds"))){
-            list.add("Verloren: " + pattern);
-            submit.setVisibility(View.GONE);
-            return;
-        }
-        userguess++;
-        System.out.println(pattern);
-        EditText guess = findViewById(R.id.guess);
-
-        if(guess.getText().toString().length() != 4){
-            Toast.makeText(this, "Enter 4 digits", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        String l = checkPattern(guess.getText().toString().toUpperCase());
-        if(l.equals("w")){
-            list.add("gewonnen: " + pattern);
-            adapter.notifyDataSetChanged();
-            return;
-        }
-        list.add(checkPattern(guess.getText().toString().toUpperCase()));
-        adapter.notifyDataSetChanged();
-        guess.setText("");
-    }
-
-    private InputStream getInputStreamForAsset(String filename) {
+    private InputStream getInputStreamForAsset(String filename)
+    {
         AssetManager assets = getAssets();
         try {
             return assets.open(filename);
@@ -164,4 +91,5 @@ public class MainActivity extends AppCompatActivity {
             return null;
         }
     }
+
 }
