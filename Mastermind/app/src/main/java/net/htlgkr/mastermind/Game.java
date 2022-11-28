@@ -1,23 +1,43 @@
 package net.htlgkr.mastermind;
 
+import android.util.Xml;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Toast;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+import org.xmlpull.v1.XmlSerializer;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
 public class Game {
 
     private String currentguess;
-    private List<String> list;
     ArrayAdapter<String> adapter;
     private List<String> templist;
     private String pattern = "";
@@ -31,27 +51,100 @@ public class Game {
         this.templist = new ArrayList<>();
         this.pattern = pattern;
         this.userguess = 0;
+        this.settings = settings;
         this.m = m;
+    }
+
+    public void onLoad(View view, File file)
+    {
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        try {
+            dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING,true);
+            DocumentBuilder db = dbf.newDocumentBuilder();
+            Document document = db.parse(file);
+            NodeList list = document.getElementsByTagName("saveState");
+            for (int i = 0; i < list.getLength(); i++) {
+                Node node = list.item(i);
+                if (node.getNodeType() == Node.ELEMENT_NODE)
+                {
+                    Element e = (Element) node;
+                    String guess = e.getAttribute("guess"+i);
+                    System.out.println(guess);
+                }
+            }
+        } catch (ParserConfigurationException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (SAXException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void onSave(View view, File file)
+    {
+        DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder docBuilder = null;
+        try {
+            docBuilder = docFactory.newDocumentBuilder();
+        } catch (ParserConfigurationException e) {
+            e.printStackTrace();
+        }
+        Document doc = docBuilder.newDocument();
+        Element rootElement = doc.createElement("saveState");
+        doc.appendChild(rootElement);
+        Element code = doc.createElement("code");
+        rootElement.appendChild(code);
+        Element guess;
+        Element userinput;
+        String[] parts;
+        for (int i = 0; i < m.list.size(); i++) {
+            parts = m.list.get(i).split("/");
+            guess = doc.createElement("guess"+i);
+            rootElement.appendChild(guess);
+            userinput = doc.createElement("userInput");
+            userinput.setTextContent(parts[0]);
+            guess.appendChild(userinput);
+            userinput = doc.createElement("result");
+            userinput.setTextContent(parts[1]);
+            guess.appendChild(userinput);
+        }
+        FileOutputStream output = null;
+        try {
+            output = new FileOutputStream(file);
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            Transformer transformer = transformerFactory.newTransformer();
+            DOMSource source = new DOMSource(doc);
+            StreamResult result = new StreamResult(output);
+            transformer.transform(source, result);
+            System.out.println("write data success to file"+ file.getAbsolutePath());
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (TransformerConfigurationException e) {
+            e.printStackTrace();
+        } catch (TransformerException e) {
+            e.printStackTrace();
+        }
     }
 
     public void settingsbutton(View view){
 
         //TODO: es is des pattern in da listn nd nua da guess
-        if (!list.isEmpty()&&!list.contains("correctPositionSign +")&&!list.contains("High-Scores: ")&&!list.isEmpty()&&!list.contains(currentguess)) {
+        if (!m.list.isEmpty()&&!m.list.contains("correctPositionSign +")&&!m.list.contains("High-Scores: ")&&!m.list.isEmpty()&&!m.list.contains(currentguess)) {
             savetotemp();
-            System.out.println(list.get(0));
+            System.out.println(m.list.get(0));
         }
 
-        if(list.contains("correctPositionSign +")||list.contains("correctCodeElementSign −")||list.contains("codeLength 4")||list.contains("doubleallowed true"))
+        if(m.list.contains("correctPositionSign +")||m.list.contains("correctCodeElementSign −")||m.list.contains("codeLength 4")||m.list.contains("doubleallowed true"))
         {
-            list.clear();
+            m.list.clear();
             getfromtemp();
             adapter.notifyDataSetChanged();
             return;
         }
-        list.clear();
+        m.list.clear();
         for(Map.Entry<String, String> m : settings.entrySet()){
-            list.add(m.getKey() + " " + m.getValue());
+            this.m.list.add(m.getKey() + " " + m.getValue());
         }
         adapter.notifyDataSetChanged();
     }
@@ -85,35 +178,34 @@ public class Game {
                 }
             }
         }
-        return userInput + " | " + dd;
+        return userInput + " / " + dd;
     }
 
-    public String submitbutton(View view){
+    public String submitbutton(View view, EditText guess){
         Button submit = view.findViewById(R.id.submit);
 
         if(userguess == Integer.parseInt(settings.get("guessRounds"))){
-            list.clear();
-            list.add("Verloren: " + pattern);
+            m.list.clear();
+            m.list.add("Verloren: " + pattern);
             submit.setVisibility(View.GONE);
             return "verloren";
         }
         userguess++;
         System.out.println(pattern);
-        EditText guess = view.findViewById(R.id.guess);
         this.currentguess = guess.getText().toString();
         if(guess.getText().toString().length() != 4 || isStringinside(guess.getText().toString())){
             return "toast";
         }
         String l = checkPattern(guess.getText().toString().toUpperCase());
         if(l.equals("w")){
-            list.clear();
+            m.list.clear();
             Button b = view.findViewById(R.id.submit);
             b.setEnabled(false);
-            list.add("won! Pattern: " + pattern+" in "+userguess+" guesses");
+            m.list.add("won! Pattern: " + pattern+" in "+userguess+" guesses");
             adapter.notifyDataSetChanged();
             return "win";
         }
-        list.add(checkPattern(guess.getText().toString().toUpperCase()));
+        m.list.add(l);
         adapter.notifyDataSetChanged();
         guess.setText("");
         return "casual";
@@ -121,9 +213,9 @@ public class Game {
 
     private void savetotemp()
     {
-        if (list.size()>0) {
-            for (int i = 0; i < list.size(); i++) {
-                templist.add(i, list.get(i));
+        if (m.list.size()>0) {
+            for (int i = 0; i < m.list.size(); i++) {
+                templist.add(i, m.list.get(i));
             }
         }
     }
@@ -131,7 +223,7 @@ public class Game {
     private void getfromtemp()
     {
         for (int i = 0; i < templist.size(); i++) {
-            list.add(i, templist.get(i));
+            m.list.add(i, templist.get(i));
         }
     }
 
@@ -148,19 +240,19 @@ public class Game {
 
     public void highScoresButton(View view)
     {
-        if (list.contains("High-Scores: ")||list.contains("correctPositionSign +"))
+        if (m.list.contains("High-Scores: ")||m.list.contains("correctPositionSign +"))
         {
-            list.clear();
+            m.list.clear();
             getfromtemp();
             adapter.notifyDataSetChanged();
             return;
         }
-        if (!list.contains("correctPositionSign +")&&!list.contains("High-Scores: ")&&!list.isEmpty()&&!list.contains(currentguess))
+        if (!m.list.contains("correctPositionSign +")&&!m.list.contains("High-Scores: ")&&!m.list.isEmpty()&&!m.list.contains(currentguess))
         {
             savetotemp();
         }
-        list.clear();
-        list.add("High-Scores: ");
+        m.list.clear();
+        m.list.add("High-Scores: ");
         adapter.notifyDataSetChanged();
         String path = m.getFilesDir().getAbsolutePath()+"/data/data/Mastermind";
         System.out.println(path);

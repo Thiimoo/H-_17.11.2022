@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.sql.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,11 +29,10 @@ public class MainActivity extends AppCompatActivity {
 
     Game g;
     Map<String, String> settings = new HashMap<>();
-
     ListView listView;
     ArrayAdapter<String> adapter;
     List<String> list = new ArrayList<>();
-    String pattern;
+    String pattern = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,10 +47,19 @@ public class MainActivity extends AppCompatActivity {
         g = new Game(pattern, adapter,settings,this);
     }
 
+    public void onLoad(View view)
+    {
+        g.onLoad(view,new File("data/data/net.htlgkr.mastermind/files/saved.xml"));
+    }
+
+    public void onSave(View view)
+    {
+        g.onSave(view, new File("data/data/net.htlgkr.mastermind/files/saved.xml"));
+    }
 
     public void loadSettings(){
         Scanner sc = new Scanner(getInputStreamForAsset("config.conf"));
-        while(sc.hasNext()){
+        while(sc.hasNextLine()){
             String line = sc.nextLine().replace(" ", "");
             String[] parts = line.split("=");
             settings.put(parts[0], parts[1]);
@@ -67,13 +76,12 @@ public class MainActivity extends AppCompatActivity {
 
     public void submitbutton(View view)
     {
-        String temp = g.submitbutton(view);
+        String temp = g.submitbutton(view,findViewById(R.id.guess));
         if (temp.equals("toast"))
         {
             Toast.makeText(this, "Enter valid guess", Toast.LENGTH_SHORT).show();
         }
     }
-
 
     public void settingsbutton(View view)
     {
