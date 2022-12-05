@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.content.res.AssetManager;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -45,6 +46,17 @@ public class MainActivity extends AppCompatActivity {
         generatePattern();
         System.out.println(pattern);
         g = new Game(pattern, adapter,settings,this);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                ListView listView = findViewById(R.id.listview);
+                Button b = findViewById(R.id.submit);
+                if (position == listView.getAdapter().getCount()-1&&!b.isEnabled())
+                {
+                    newGame();
+                }
+            }
+        });
     }
 
     public void onLoad(View view)
@@ -54,7 +66,21 @@ public class MainActivity extends AppCompatActivity {
 
     public void onSave(View view)
     {
-        g.onSave(view, new File("data/data/net.htlgkr.mastermind/files/saved.xml"));
+        File f = new File("data/data/net.htlgkr.mastermind/files/saved.xml");
+        try {
+            if (f.createNewFile())
+            {
+                g.onSave(view, f);
+            }
+            else
+            {
+                g.onSave(view,f);
+
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void loadSettings(){
@@ -70,27 +96,67 @@ public class MainActivity extends AppCompatActivity {
         String[] pat = settings.get("alphabet").split(",");
         for (int i = 0; i < Integer.parseInt(settings.get("codeLength")); i++){
             int random = new Random().nextInt(6);
-            pattern += pat[random];
+            if (settings.get("doubleAllowed").equals("true"))
+            {
+                pattern += pat[random];
+            }
+            else
+            {
+               do
+                    {
+                        random = new Random().nextInt(6);
+                    }
+               while (pattern.contains(pat[random]));
+               pattern += pat[random];
+            }
         }
     }
 
     public void submitbutton(View view)
     {
-        String temp = g.submitbutton(view,findViewById(R.id.guess));
+        File f = new File("data/data/net.htlgkr.mastermind/files/score.sc");
+        String temp = "";
+        try {
+            if (f.createNewFile())
+            {
+                temp = g.submitbutton(view,findViewById(R.id.guess),f);
+            }
+            else
+            {
+                temp = g.submitbutton(view,findViewById(R.id.guess),f);
+
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         if (temp.equals("toast"))
         {
             Toast.makeText(this, "Enter valid guess", Toast.LENGTH_SHORT).show();
+        }
+       else if (temp.equals("win"))
+        {
+            Button b = findViewById(R.id.save);
+            b.setEnabled(false);
         }
     }
 
     public void settingsbutton(View view)
     {
         g.settingsbutton(view);
+        Button b = findViewById(R.id.submit);
+        b.setEnabled(false);
     }
 
     public void highScoresButton(View view)
     {
+
         g.highScoresButton(view);
+        Button b = findViewById(R.id.submit);
+        b.setEnabled(false);
+        EditText t = findViewById(R.id.guess);
+        t.setText("");
     }
 
     private InputStream getInputStreamForAsset(String filename)
@@ -102,6 +168,25 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
             return null;
         }
+    }
+
+
+    public void newGame()
+    {
+        this.list.clear();
+        this.pattern = "";
+        this.settings = new HashMap<>();
+        loadSettings();
+        generatePattern();
+        this.g = new Game(this.pattern,this.adapter,this.settings,this);
+        this.list.clear();
+        this.adapter.notifyDataSetChanged();
+        Button b = findViewById(R.id.submit);
+        b.setEnabled(true);
+        EditText t = findViewById(R.id.guess);
+        t.setText("");
+        b = findViewById(R.id.save);
+        b.setEnabled(true);
     }
 
 }
