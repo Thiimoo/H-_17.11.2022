@@ -55,8 +55,14 @@ public class MainActivity extends AppCompatActivity {
                 {
                     newGame();
                 }
+                if (position == listView.getAdapter().getCount()-2&&!b.isEnabled()&&listView.)
+                {
+                    //eif de map settings ändern und in game a set method mocha dass oise gändert wird
+                    newGame();
+                }
             }
         });
+        
     }
 
     public void onLoad(View view)
